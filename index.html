@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Expense Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f5ff;
+    margin: 0;
+    padding: 20px;
+    color: #222;
+}
+
+.container {
+    max-width: 650px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px #0001;
+}
+
+h1 {
+    text-align: center;
+    color: #4338ca;
+}
+
+.description {
+    text-align: center;
+    color: #666;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 7px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+button {
+    background: #4338ca;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #312e81;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.card {
+    background: #eef2ff;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.card h3 {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.card p {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#expenseList {
+    padding: 0;
+    list-style: none;
+}
+
+#expenseList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+#expenseList button {
+    width: auto;
+    padding: 8px 12px;
+    background: #dc2626;
+    font-size: 13px;
+}
+
+.note {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 20px;
+}
+
+@media (max-width: 400px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>💰 Smart Expense Calculator</h1>
+
+    <p class="description">
+        Track your income, expenses and savings.
+    </p>
+
+    <label for="income">Monthly Income (₹)</label>
+    <input type="number" id="income"
+           min="0" step="0.01" placeholder="Enter monthly income">
+
+    <h2>Add an Expense</h2>
+
+    <label for="category">Expense Category</label>
+    <select id="category">
+        <option value="Food">Food</option>
+        <option value="Travel">Travel</option>
+        <option value="Education">Education</option>
+        <option value="Shopping">Shopping</option>
+        <option value="Bills">Bills</option>
+        <option value="Healthcare">Healthcare</option>
+        <option value="Other">Other</option>
+    </select>
+
+    <label for="amount">Expense Amount (₹)</label>
+    <input type="number" id="amount"
+           min="0.01" step="0.01" placeholder="Enter amount">
+
+    <button type="button" id="addButton">+ Add Expense</button>
+
+    <div class="summary">
+
+        <div class="card">
+            <h3>Monthly Income</h3>
+            <p id="incomeDisplay">₹0.00</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Expenses</h3>
+            <p id="expenseDisplay">₹0.00</p>
+        </div>
+
+        <div class="card">
+            <h3>Remaining Savings</h3>
+            <p id="savingsDisplay">₹0.00</p>
+        </div>
+
+        <div class="card">
+            <h3>Budget Status</h3>
+            <p id="statusDisplay">Not set</p>
+        </div>
+
+    </div>
+
+    <h2>Expense History</h2>
+
+    <ul id="expenseList"></ul>
+
+    <button type="button" id="clearButton"
+            style="background:#555;margin-top:15px;">
+        Clear All Expenses
+    </button>
+
+    <p class="note">
+        Note: This demo keeps expense entries in memory while the page
+        remains open. Refreshing the page clears the entries. Do not
+        enter sensitive financial information.
+    </p>
+
+</div>
+
+<script>
+const incomeInput = document.getElementById("income");
+const categoryInput = document.getElementById("category");
+const amountInput = document.getElementById("amount");
+const expenseList = document.getElementById("expenseList");
+
+let expenses = [];
+
+function money(amount) {
+    return "₹" + amount.toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function updateCalculator() {
+    const income = Number(incomeInput.value) || 0;
+
+    const totalExpenses = expenses.reduce(
+        (total, expense) => total + expense.amount, 0
+    );
+
+    const savings = income - totalExpenses;
+
+    document.getElementById("incomeDisplay").textContent =
+        money(income);
+
+    document.getElementById("expenseDisplay").textContent =
+        money(totalExpenses);
+
+    document.getElementById("savingsDisplay").textContent =
+        money(savings);
+
+    const status = document.getElementById("statusDisplay");
+
+    if (income <= 0) {
+        status.textContent = "Set income";
+    } else if (savings < 0) {
+        status.textContent = "Over budget!";
+    } else {
+        status.textContent = "Within budget";
+    }
+
+    expenseList.replaceChildren();
+
+    expenses.forEach((expense, index) => {
+        const item = document.createElement("li");
+        const details = document.createElement("span");
+        const deleteButton = document.createElement("button");
+
+        details.textContent =
+            expense.category + " — " + money(expense.amount);
+
+        deleteButton.textContent = "Delete";
+        deleteButton.type = "button";
+        deleteButton.setAttribute(
+            "aria-label",
+            "Delete " + expense.category + " expense"
+        );
+
+        deleteButton.addEventListener("click", () => {
+            expenses.splice(index, 1);
+            updateCalculator();
+        });
+
+        item.append(details, deleteButton);
+        expenseList.appendChild(item);
+    });
+}
+
+document.getElementById("addButton").addEventListener("click", () => {
+    const amount = Number(amountInput.value);
+
+    if (amountInput.value.trim() === "" ||
+        !Number.isFinite(amount) ||
+        amount <= 0) {
+        alert("Please enter a valid expense amount.");
+        return;
+    }
+
+    expenses.push({
+        category: categoryInput.value,
+        amount: amount
+    });
+
+    amountInput.value = "";
+    updateCalculator();
+});
+
+incomeInput.addEventListener("input", updateCalculator);
+
+document.getElementById("clearButton").addEventListener("click", () => {
+    if (expenses.length === 0) {
+        return;
+    }
+
+    if (confirm("Delete all expenses?")) {
+        expenses = [];
+        updateCalculator();
+    }
+});
+
+updateCalculator();
+</script>
+
+</body>
+</html>
